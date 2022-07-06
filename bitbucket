@@ -1,0 +1,40 @@
+#!/bin/bash -ex
+if [ "$#" -lt 1 ]
+then
+  echo "Usage: $0 <prod/uat> [optional terraform parameters]"
+  exit -1
+fi
+
+export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+repo=$(git config --local --get remote.origin.url  | sed 's#.*swigy/##;s#.git##')
+relpath=$(echo $PWD | sed "s#$(git rev-parse --show-toplevel)/##")
+
+if [ "uat" = "$1" ]
+then
+  echo "Creating plan for target env uat..."
+  export TF_VAR_tfstate=tfstate/bitbucket.org/$repo/uat/$relpath.tfstate
+elif [ "prod" = "$1" ]
+then
+  echo "Creating plan for target env prod..."
+  export TF_VAR_tfstate=tfstate/bitbucket.org/$repo/$relpath.tfstate
+else
+  echo "First parameter must be target environment"
+  exit -1
+fi
+rm -rf .terraform || echo "Cleaning up .terraform"
+argv=( "$@" )
+export TF_VAR_build_environment=local
+here=$(dirname $0)
+terraform init \
+  -lock=false \
+  --backend-config=key=$TF_VAR_tfstate \
+  --backend-config=bucket=swiggy-tf-state-prod \
+  --backend-config=encrypt=true \
+  --backend-config=dynamodb_table=tf-state-lock \
+  --backend-config=region=ap-southeast-1
+terraform fmt
+git add *.tf
+terraform plan -lock=false -out=plan.out "${argv[@]:1}"
+echo "// Change generated at $(date)" >tf-plan.txt
+terraform show -no-color plan.out >>tf-plan.txt
+git add tf-plan.txt
