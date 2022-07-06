@@ -1,0 +1,51 @@
+
+Swiggy DevOps
+Centralized Logging Infrastructure
+
+
+
+
+
+Share
+
+OnBoarding Logs into Central Logging Infra
+Created by makarand NSD (Unlicensed)
+Last updated: Sep 25, 201721 people viewed21 people viewed
+During Onboarding of your application into the Central Logging Infra(Graylog)
+
+Prerequisites:
+All the logs are needed to be in JSON format.
+Standard log path for all the instances of a specific service.
+Step-by-step guide
+Filebeat Configuration:
+
+Configure the filebeat.yml 
+multiple log paths can be configured in filebeat.yml as given { "filebeat": { "prospectors": [ "paths": [ log_path_1, log_path_2, log_path_3 ], "input_type": "log" ] }
+for configuring logstash with multiple graylog hosts in filebeat.yml, give { "filebeat": { "logstash": ["hosts": [graylog_server_1:port,graylog_server_2:port ], "loadbalance": "true"] } }
+restart filebeat using "service filebeat restart"
+
+ File 
+
+Different types of inputs for graylog will be configured with different ports, so make a note of the port given in graylog. Care should be taken so that different inputs are not configured to the same port.
+
+
+
+Graylog Configuration:
+
+Login to the graylog ui.
+System → Inputs → Select Input(Beats) → Launch new input
+Title: give your title
+Port: specify the same port which was configured in filebeat.yml
+
+Override source: this option can be used to override the source field, for example, service name and Save
+
+Once saved, logs recieved can be checked by selecting "Show received messages"
+
+
+
+For detailed Querying:
+http://docs.graylog.org/en/2.2/pages/queries.html
+
+
+
+
