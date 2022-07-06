@@ -1,0 +1,59 @@
+Current limitations in the IaC setup
+
+Requires the terraform contributors to create a plan locally in order to contribute.
+
+This creates the following problems
+
+Every contributor must be given access keys
+
+The user must be allowed to assume roles in other accounts (for terraform refresh) as and when we approach multi-account IaC management.
+
+Need to have multiple terraform versions installed locally and manage them using tfswitch
+
+Increases the time to get the changes live by roughly a factor of 2. Need to run plan locally and the same plan is created on the PR by the test pipeline.
+
+Requires the user to create and submit PRs only for one directory at a time
+
+This is caused by the fact that each merged PR must have the latest changes as part of tf-plan.txt as the top commit.
+
+This increases the TAT when we have multiple changes to do across multiple directories.
+
+Example - adding multiple users, adding multiple policies, removing users, etc.
+
+This can also be problematic when we have made multiple PRs for a feature and we want to roll back those changes - increases time to mitigation
+
+Bulky overhead in terms of adding new repositories to the flow
+
+Need to have a job for each repo. Although we have automation to take care of it (bootstrap pipeline), the number of jobs will keep increasing significantly as and when we add more AWS services and Accounts under IaC
+
+Requires merging to master without knowing the apply output
+
+Since we need to merge into master without applying, we can be left in a state when the master branch is broken. Ideal terraform flow must ensure that all 3 components - Code, State and Resources on AWS must be all in sync. Applying the plan on the PR itself post-approval helps ensure this flow. Once we see no-op, we can safely merge the PR.
+
+Support for multiple terraform versions
+
+This support was added here recently but still, it requires the entire repo to be on the same version. This can be problematic when we want to migrate to terraform versions that aren’t backwards compatible. Example - 0.11 to 0.12
+
+Having directory level granularity for terraform versions ensure that we can safely migrate the codebase without having significant code freezes.
+
+ 
+
+Functional requirements
+
+Ability to test the changes in the UAT environment.
+
+Ability to add tests for terraform code/plan files.
+
+Faster/Easier rollback mechanism of PRs in case of issues/outages.
+
+Easy roll out to product teams for Self-serving Infrastructure (with Maintainer review)
+
+Non-functional requirements
+
+Rollbacks should be as fast as possible. Time taken to revert the PR + resources creation/deletion.
+
+Minimal overhead in terms of adding new repositories and AWS accounts.
+
+No impact in performance when using multiple accounts and multiple PRs across repositories simultaneously.
+
+Changes made in UAT should in no way affect production
